@@ -2,8 +2,6 @@
 
 # Implementation Guide
 
-## Overview
-
 This implementation guide outlines the high-level steps required to prepare your app for interfacing with the SitePoint SDK using Bluetooth and NTRIP:
 
 1. Declare [permissions](B2_Permissions.md) for Bluetooth and Location Services.
@@ -16,6 +14,6 @@ This implementation guide outlines the high-level steps required to prepare your
 
 <hr>
 
-## Read Next
+## Next Steps
 
 - [Permissions](B2_Permissions.md) - Declare permissions for Bluetooth and Location Services.

@@ -2,22 +2,18 @@
 
 # SitePoint SDK
 
-## Overview
-
-The SitePoint Android SDK enables developers to interface with SignalQuest's SitePoint GNSS devices from their Android applications.
+The SitePoint Android SDK enables developers to integrate SignalQuest's SitePoint GNSS devices with Android applications.
 
 ## Obtaining the SDK
 
-The [SitePoint Android SDK](https://github.com/signalquest/SitePoint-Android-SDK) is available on GitHub. 
+Access the [SitePoint Android SDK](https://github.com/signalquest/SitePoint-Android-SDK) on GitHub. 
 
-## SDK Documentation in Javadoc
+## SDK Documentation
 
-The Android SDK is thoroughly documented using Javadoc annotations, allowing developers to view inline code references when developing against the SDK.
-
-A browsable, [web-based version of the documentation](https://signalquest.github.io/SitePoint-Android-SDK) is also available.
+The SDK is comprehensively documented using Javadoc annotations, providing inline code references for developers. A [web-based version of the documentation](https://signalquest.github.io/SitePoint-Android-SDK) is also available for browsing.
 
 <hr>
 
-## Start Developing
+## Next Steps
 
-For step-by-step instructions on interfacing with the SitePoint SDK, please refer to the [Implementation Guide](../Implementation_Guide/B1_Implementation_Guide.md).
+For a minimal Java example application demonstrating SitePoint SDK integration, refer to the [Android Java Example App](A2_Android_Java_Example_App.md).

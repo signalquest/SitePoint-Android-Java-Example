@@ -33,3 +33,14 @@ The SitePoint will receive these messages and begin using them to aid in solving
 The `aidingQuality` array of booleans in the `Status` class monitors whether the SitePoint used the recent RTCM messages.
 
 For example, in the SQ Survey app, a graphical indicator shows this aiding quality with either a solid or empty rectangle for each position. This can be helpful for diagnosing issues obtaining a higher accuracy.
+
+### Remembering an NTRIP Service
+
+The application stores and retrieves the last NTRIP service used for ease of use, even though it is not necessary for interacting with a SitePoint. 
+
+The NTRIP service model class is defined in `app/src/main/proto/ntrip_service.proto` and is used in the `Ntrip` class. This implementation requires the following plugins:
+
+- `libs.plugins.jetbrainsKotlinAndroid`
+- `com.google.protobuf`.
+
+For more information on how to implement this using Android's Proto DataStore, refer to the [Android's DataStore documentation](https://developer.android.com/topic/libraries/architecture/datastore#java).

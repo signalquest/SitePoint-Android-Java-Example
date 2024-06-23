@@ -6,11 +6,18 @@ import android.os.HandlerThread;
 import android.util.Log;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.datastore.core.Serializer;
+import androidx.datastore.rxjava3.RxDataStore;
+import androidx.datastore.rxjava3.RxDataStoreBuilder;
 
 import com.signalquest.api.NtripParser;
 import com.signalquest.api.NtripParser.AuthorizationFailure;
+import com.signalquest.api.NtripParser.AuthorizationResult;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
@@ -19,6 +26,10 @@ import java.nio.channels.SocketChannel;
 import java.util.ArrayDeque;
 import java.util.Base64;
 import java.util.Queue;
+
+import io.reactivex.rxjava3.core.Single;
+import kotlin.Unit;
+import kotlin.coroutines.Continuation;
 
 /**
  * NTRIP Service connector.
@@ -38,11 +49,11 @@ class Ntrip {
     }
     private State _state = State.IDLE;
     private final static String LOG_TAG = "NTRIP";
-    private NtripService ntripService;
     private final NtripParser parser;
     private NtripGga gga = null;
     private Handler ggaHandler;
     private Server ntripServer;
+    static final String NTRIP_CONNECT_ACTION = "com.signalquest.example.NTRIP_CONNECT_ACTION";
     static final String NTRIP_DISCONNECT_ACTION = "com.signalquest.example.NTRIP_DISCONNECT_ACTION";
 
     private final ServerListener serverListener = new ServerListener() {
@@ -55,8 +66,14 @@ class Ntrip {
                     break;
                 case ACTIVE:
                     Log.v(LOG_TAG, "Parsing incoming RTCM");
-                    parser.parseRtcm(data);
-                    App.onParsed();
+                    try {
+                        parser.parseRtcm(data);
+                        App.onParsed();
+                    } catch (NtripParser.ParseException e) {
+                        // Not expected; please report the log results to SignalQuest.
+                        App.displayError(LOG_TAG, "NTRIP RTCM parse failure; see logs");
+                        Log.e(LOG_TAG, "Failed parsing RTCM data", e);
+                    }
                     break;
                 default:
                     String str = new String(data);
@@ -89,22 +106,18 @@ class Ntrip {
      * Connects to the given NTRIP service.
      */
     public void connect(NtripService service) {
-        if (ntripService != null) {
-            Log.i(LOG_TAG, ("Disconnecting from " + ntripService));
-            disconnect();
-        }
-
-        if (service.mountpoint == null || service.mountpoint.isEmpty()) {
+        setNtripService(service);
+        if (service.getMountpoint() == null || service.getMountpoint().isEmpty()) {
             Log.w(LOG_TAG, "This example app does not handle mountpoint listings");
             App.displayError(LOG_TAG, "Mountpoint missing");
             return;
         }
 
         try {
-            ntripService = service;
-            ntripServer = new Server(service.server, service.port, serverListener);
+            ntripServer = new Server(service.getServer(), service.getPort(), serverListener);
             ntripServer.start();
             _state = State.CONNECTING;
+            broadcastConnect();
         } catch (Exception e) {
             Log.w(LOG_TAG, "Unhandled: unable to connect to server");
             _state = State.IDLE;
@@ -121,13 +134,23 @@ class Ntrip {
     public void disconnect() {
         _state = State.IDLE;
         stopGgaTimer();
-        ntripServer.stop();
-        ntripService = null;
+        if (ntripServer != null) {
+            ntripServer.stop();
+        }
         broadcastDisconnect();
     }
 
+    NtripService getNtripService() {
+        return serviceStore.data().firstElement().blockingGet();
+    }
+
+    private void setNtripService(@NonNull NtripService service) {
+        serviceStore.updateDataAsync(currentService -> Single.just(service));
+    }
+
     private void sendGgaString() {
-        if (ntripService != null && ntripService.sendPosition && _state == State.ACTIVE) {
+        NtripService ntripService = getNtripService();
+        if (ntripService != null && ntripService.getSendPosition() && _state == State.ACTIVE) {
             if (gga == null) {
                 gga = new NtripGga();
             }
@@ -175,16 +198,17 @@ class Ntrip {
     }
 
     private static String getSlashedMountpoint(NtripService service) {
-        String mountpoint = service.mountpoint;
+        String mountpoint = service.getMountpoint();
         return mountpoint.startsWith("/") ? mountpoint : "/" + mountpoint;
     }
 
     private void startAiding() {
+        NtripService ntripService = getNtripService();
         if (ntripService != null) {
             Log.i(LOG_TAG, ("Authorize for " + ntripService));
             _state = State.AUTHORIZING;
             // NOTE: Please use your own user-agent string
-            String serverRequest = "GET " + getSlashedMountpoint(ntripService) + " HTTP/1.1\r\nHost: " + ntripService.server + "\r\nAccept: */*\r\nUser-Agent: SignalQuest NTRIP Client/1.0\r\nAuthorization: Basic " + getBasicAuth() + "\r\nConnection: close\r\n\r\n";
+            String serverRequest = "GET " + getSlashedMountpoint(ntripService) + " HTTP/1.1\r\nHost: " + ntripService.getServer() + "\r\nAccept: */*\r\nUser-Agent: SignalQuest NTRIP Client/1.0\r\nAuthorization: Basic " + getBasicAuth() + "\r\nConnection: close\r\n\r\n";
             byte[] data = serverRequest.getBytes();
             try {
                 ntripServer.write(data);
@@ -198,25 +222,38 @@ class Ntrip {
     }
 
     private String getBasicAuth() {
-        String username = ntripService.username;
-        String password = ntripService.password;
+        NtripService ntripService = getNtripService();
+        String username = ntripService.getUsername();
+        String password = ntripService.getPassword();
         String authString = username + ":" + password;
         return Base64.getEncoder().encodeToString(authString.getBytes());
     }
 
     private void handleAuthorized(byte[] serverResponse) {
         try {
-            parser.parseAuthorized(serverResponse);
-            Log.i(LOG_TAG, "NTRIP auth success, active");
-            _state = State.ACTIVE;
-            if (ntripService.sendPosition) {
-                // Start a repeating timer to send the latest GGA string (if any known)
-                startGgaTimer();
+            AuthorizationResult result = parser.parseAuthorized(serverResponse);
+            switch (result) {
+                case SUCCESS:
+                    Log.i(LOG_TAG, "NTRIP auth success, active");
+                    _state = State.ACTIVE;
+                    NtripService ntripService = getNtripService();
+                    if (ntripService.getSendPosition()) {
+                        // Start a repeating timer to send the latest GGA string (if any known)
+                        startGgaTimer();
+                    }
+                    break;
+                case INSUFFICIENT_DATA:
+                    // Stay in State.AUTHORIZING so next response chunk will be sent to parseAuthorized, too.
+                    break;
             }
         } catch (AuthorizationFailure e) {
             App.displayError(LOG_TAG, "NTRIP auth failure: (" + e.summary + ": " + e.details + ")");
             disconnect();
         }
+    }
+
+    private void broadcastConnect() {
+        App.getAppContext().sendBroadcast(new Intent(NTRIP_CONNECT_ACTION));
     }
 
     private void broadcastDisconnect() {
@@ -293,6 +330,7 @@ class Ntrip {
                 }
             } catch (Exception e) {
                 listener.handleException(e);
+            } finally {
                 stop();
             }
         }
@@ -338,28 +376,39 @@ class Ntrip {
         void handleException(Exception e);
     }
 
-    public static class NtripService {
-        public String server;
-        public int port;
-        public String mountpoint;
-        public boolean sendPosition;
-        public String username;
-        public String password;
-
-        public NtripService(String server, int port, String username, String password, String mountpoint, boolean sendPosition) {
-            this.server = server;
-            this.port = port;
-            this.username = username;
-            this.password = password;
-            this.mountpoint = mountpoint;
-            this.sendPosition = sendPosition;
+    /**
+     * For serializing the last used NTRIP service, uses Proto DataStore
+     */
+    private static class ServiceSerializer implements Serializer<NtripService> {
+        @Override
+        public NtripService getDefaultValue() {
+            return NtripService.getDefaultInstance();
         }
 
-        @NonNull
-        public String toString() {
-            return "NtripService: " + server + ":" + port + getSlashedMountpoint(this);
+        @Nullable
+        @Override
+        public NtripService readFrom(@NonNull InputStream inputStream, @NonNull Continuation<? super NtripService> continuation) {
+            try {
+                return NtripService.parseFrom(inputStream);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
+
+        @Nullable
+        @Override
+        public NtripService writeTo(NtripService ntripService, @NonNull OutputStream outputStream, @NonNull Continuation<? super Unit> continuation) {
+            try {
+                ntripService.writeTo(outputStream);
+                return ntripService;
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
         }
     }
+
+    RxDataStore<NtripService> serviceStore =
+            new RxDataStoreBuilder<>(App.getAppContext(), "service.pb", new ServiceSerializer()).build();
 }
 
 

@@ -180,20 +180,31 @@ public class BleManager {
      * {@link BluetoothGattCharacteristic#WRITE_TYPE_NO_RESPONSE} for fast turnarounds).
      */
     private synchronized void writeRtcm() {
-        if (writingRtcm || rtcmCharacteristic == null) { return; }
+        if (writingRtcm) { return; }
+        if (rtcmCharacteristic == null) {
+            // Pull messages to prevent queueing of old data; only current RTCM messages are useful
+            // Also prevents NTRIP_BUFFER_OVERRUN errors
+            byte[] ignoredRtcmData = App.getRtcmData(9999);
+            if (0 < ignoredRtcmData.length) {
+                Log.d(LOG_TAG, String.format("No RTCM characteristic; ignoring %d bytes of RTCM data.",
+                        ignoredRtcmData.length));
+            }
+        }
         // see https://developer.android.com/about/versions/14/behavior-changes-all#mtu-set-to-517
-        byte[] message = App.getRtcmData(Math.min(mtu, 512) - 5);
-        if (message.length == 0) {
+        byte[] rtcmData = App.getRtcmData(Math.min(mtu, 512) - 5);
+        if (rtcmData.length == 0) {
             Log.d(LOG_TAG, "No RTCM data available");
             return;
         }
         writingRtcm = true;
         if (Build.VERSION.SDK_INT < 33) {
-            rtcmCharacteristic.setValue(message);
+            rtcmCharacteristic.setValue(rtcmData);
             gatt.writeCharacteristic(rtcmCharacteristic);
         } else {
-            gatt.writeCharacteristic(rtcmCharacteristic, message, BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE);
+            gatt.writeCharacteristic(rtcmCharacteristic, rtcmData, BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE);
         }
+        // make sure queue is empty
+        writeRtcm();
     }
 
     private void assignBluetoothVariables() {
