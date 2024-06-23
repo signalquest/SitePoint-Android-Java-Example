@@ -17,7 +17,6 @@ import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
-import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -38,7 +37,6 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.google.android.material.switchmaterial.SwitchMaterial;
 import com.signalquest.api.Location;
 import com.signalquest.api.Status;
-import com.signalquest.example.Ntrip.NtripService;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -101,7 +99,7 @@ public class MainActivity extends AppCompatActivity {
         for (String action : new String [] {
                 App.ERROR_ACTION,
                 BleManager.BT_CONNECT_ACTION, BleManager.BT_DISCONNECT_ACTION,
-                Ntrip.NTRIP_DISCONNECT_ACTION,
+                Ntrip.NTRIP_CONNECT_ACTION, Ntrip.NTRIP_DISCONNECT_ACTION,
                 BleManager.LOCATION_MESSAGE_RECEIVED, BleManager.STATUS_MESSAGE_RECEIVED,
         }) {
             dataFilter.addAction(action);
@@ -134,6 +132,8 @@ public class MainActivity extends AppCompatActivity {
             sitePoints.clear();
             startScanning();
         }
+
+        setNtripValues();
     }
 
     private void enableBluetooth() {
@@ -160,12 +160,12 @@ public class MainActivity extends AppCompatActivity {
     private void setupToggling(int imageViewId, int layoutId) {
         ImageView view = findViewById(imageViewId);
         view.setOnClickListener(v -> {
-            LinearLayout layout = findViewById(layoutId);
-            if (layout.getVisibility() == LinearLayout.VISIBLE) {
-                layout.setVisibility(LinearLayout.GONE);
+            View layout = findViewById(layoutId);
+            if (layout.getVisibility() == View.VISIBLE) {
+                layout.setVisibility(View.GONE);
                 view.setImageResource(R.drawable.ic_arrow_up);
             } else {
-                layout.setVisibility(LinearLayout.VISIBLE);
+                layout.setVisibility(View.VISIBLE);
                 view.setImageResource(R.drawable.ic_arrow_down);
             }
         });
@@ -194,10 +194,9 @@ public class MainActivity extends AppCompatActivity {
 
             SwitchMaterial sm = findViewById(R.id.ntrip_send_position);
             boolean sendPosition = sm.isChecked();
-            App.ntrip.connect(new NtripService(server, port, username, password, mountpoint, sendPosition));
-
-            Button button = findViewById(R.id.ntrip_connect_button);
-            button.setText(R.string.ntrip_disconnect);
+            App.ntrip.connect(NtripService.newBuilder().setServer(server).setPort(port)
+                    .setUsername(username).setPassword(password).setMountpoint(mountpoint)
+                    .setSendPosition(sendPosition).build());
         } catch (MissingValueException e) {
             showErrorDialog(e.getMessage());
         }
@@ -209,6 +208,26 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    private void setNtripValues() {
+        NtripService service = App.ntrip.getNtripService();
+        if (service == null) {
+            service = NtripService.getDefaultInstance();
+        }
+        setNtripValue(R.id.ntrip_server, service.getServer());
+        setNtripValue(R.id.ntrip_port, service.getPort() == 0 ? "2101" : service.getPort() + "");
+        setNtripValue(R.id.ntrip_username, service.getUsername());
+        setNtripValue(R.id.ntrip_password, service.getPassword());
+        setNtripValue(R.id.ntrip_mountpoint, service.getMountpoint());
+
+        SwitchMaterial sm = findViewById(R.id.ntrip_send_position);
+        sm.setChecked(service.getSendPosition());
+    }
+
+    private void setNtripValue(int fieldId, String value) {
+        EditText field = findViewById(fieldId);
+        field.setText(value);
+    }
+
     private String getNtripValue(int fieldId) throws MissingValueException {
         EditText field = findViewById(fieldId);
         String value = field.getText().toString().trim();
@@ -216,6 +235,11 @@ public class MainActivity extends AppCompatActivity {
             throw new MissingValueException("Missing NTRIP " + field.getHint());
         }
         return value;
+    }
+
+    private void handleNtripConnected() {
+        Button button = findViewById(R.id.ntrip_connect_button);
+        button.setText(R.string.ntrip_disconnect);
     }
 
     private void disconnectNtrip() {
@@ -246,6 +270,7 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
+        disconnectNtrip();
         App.bleManager.disconnect();
     }
 
@@ -349,6 +374,8 @@ public class MainActivity extends AppCompatActivity {
             Log.d(LOG_TAG, "Handling disconnect");
             sitePointView.rebuild();
             startScanning();
+        } else if (Ntrip.NTRIP_CONNECT_ACTION.equals(action)) {
+            handleNtripConnected();
         } else if (Ntrip.NTRIP_DISCONNECT_ACTION.equals(action)) {
             handleNtripDisconnected();
         } else if (App.ERROR_ACTION.equals(action)) {
@@ -475,14 +502,13 @@ public class MainActivity extends AppCompatActivity {
             // set buttons to Disconnecting/Connecting; updated when the BroadcastReceiver receives a connection state change.
             connectButton.setOnClickListener(v -> {
                 int pos = holder.getAdapterPosition();
-                Button connButton = v.findViewById(R.id.connect_button);
                 if (connectedHere) {
                     Log.d(LOG_TAG,"Disconnect button clicked for device " + sitePoints.get(pos).getName());
-                    updateButton(connButton, "Disconnecting", false);
+                    updateButton(connectButton, "Disconnecting", false);
                     MainActivity.this.disconnectSitePoint();
                 } else if (!selected) {
                     Log.d(LOG_TAG,"Connect button clicked for device " + sitePoints.get(pos).getName());
-                    updateButton(connButton, "Connecting", false);
+                    updateButton(connectButton, "Connecting", false);
                     MainActivity.this.connect(sitePoints.get(pos));
                 }
             });

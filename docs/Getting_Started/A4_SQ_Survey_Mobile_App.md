@@ -2,26 +2,27 @@
 
 # SQ Survey Mobile App
 
-## Overview
+SQ Survey is a comprehensive mobile application developed by SignalQuest for surveying and related use cases. While its source code is proprietary, the app exemplifies the capabilities achievable with the SitePoint SDK.
 
-SQ Survey is a full-featured mobile app developed by SignalQuest for surveying and related use cases. Although the source code is not available for this app, it demonstrates the type of app that can be developed using the SitePoint SDK.
+## Extended Features
 
-SQ Survey includes additional features that are not part of the SitePoint SDK but were developed within the app itself using the SDK.
+SQ Survey incorporates additional functionalities beyond the core SitePoint SDK, including:
 
-> **_Note:_** Some of these additional features in SQ Survey include:
-> - Displaying the SitePoint location on a map
-> - Storing points collected with the SitePoint into projects
-> - Querying an NTRIP caster and displaying a list of mountpoints available
-> - Storing multiple NTRIP server configurations
-> - NTRIP logging of RTCM messages and errors
-> - NTRIP reconnect handling
+- Map-based SitePoint location display
+- Project-based point collection and storage
+- NTRIP caster querying and mountpoint listing
+- Multiple NTRIP server configuration management
+- RTCM message and error logging for NTRIP
+- NTRIP reconnection handling
 
-SQ Survey can be used for reference to expand upon the concepts included in the example app.
+These features serve as reference points for developers looking to expand upon the concepts demonstrated in the example app.
 
-To request a private version of SQ Survey, please [contact SignalQuest](https://signalquest.com/contact/corporate-information/).
+## Accessing SQ Survey
+
+To request access to SQ Survey, please [contact SignalQuest](https://signalquest.com/contact/corporate-information/).
 
 <hr>
 
-## Start Developing
+## Next Steps
 
-For step-by-step instructions on interfacing with the SitePoint SDK, please refer to the [Implementation Guide](../Implementation_Guide/B1_Implementation_Guide.md).
+For detailed instructions on integrating the SitePoint SDK, refer to the [Implementation Guide](../Implementation_Guide/B1_Implementation_Guide.md).

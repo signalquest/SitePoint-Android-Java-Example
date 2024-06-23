@@ -2,15 +2,13 @@
 
 # Android Java Example App
 
+The [SitePoint Android Java Example App source code](https://github.com/signalquest/SitePoint-Android-Java-Example) demonstrates a minimal implementation of the SitePoint SDK for interfacing with SitePoint devices.
+
 ## Source Code
 
-The [SitePoint Android Java Example App source code](https://github.com/signalquest/SitePoint-Android-Java-Example) shows a minimal implementation using this SDK to interface with SitePoint devices.
+This implementation focuses on essential, required code, omitting error handling and other best practices for clarity. The example app includes additional Javadoc documentation, and additional inline comments, which may provide helpful information during development.
 
-This minimal implementation is focused on highlighting the important, required code, omitting error handling and other best practices for the sake of code clarity.
-
-> **_Note:_** Additional Javadoc documentation and inline comments are included in the example app. These are not generated in this documentation, but may be helpful to review before and during app development as they contain helpful information.
-
-### Example of Commented Code:
+### Sample Commented Code:
 
 ```java
 /**
@@ -19,20 +17,21 @@ This minimal implementation is focused on highlighting the important, required c
  * @param sitePointHandler listens for SitePoint scan results
  */
 public void startScanning(SitePointHandler sitePointHandler) {
-if (disabled()) {
-    return;
-  }
-  ScanSettings scanSettings =
-      new ScanSettings.Builder()
-          .setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY)
-          .setMatchMode(ScanSettings.MATCH_MODE_AGGRESSIVE)
-          .setCallbackType(ScanSettings.CALLBACK_TYPE_ALL_MATCHES)
-          .build();
-...
+    if (disabled()) {
+        return;
+      }
+      ScanSettings scanSettings =
+          new ScanSettings.Builder()
+              .setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY)
+              .setMatchMode(ScanSettings.MATCH_MODE_AGGRESSIVE)
+              .setCallbackType(ScanSettings.CALLBACK_TYPE_ALL_MATCHES)
+              .build();
+    ...
 ```
 
 <hr>
 
-## Start Developing
+## Next Steps
 
-The [Implementation Guide](../Implementation_Guide/B1_Implementation_Guide.md) has step-by-step instructions for interfacing with the SitePoint SDK.
+For detailed specifications of the SitePoint device, refer to the [SitePoint Datasheet](A3_SitePoint_Datasheet.md).
+

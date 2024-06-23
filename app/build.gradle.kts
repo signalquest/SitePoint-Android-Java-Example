@@ -1,5 +1,7 @@
 plugins {
     alias(libs.plugins.androidApplication)
+    alias(libs.plugins.jetbrainsKotlinAndroid)
+    id("com.google.protobuf") version "0.9.4"
 }
 
 android {
@@ -30,13 +32,41 @@ android {
         sourceCompatibility = JavaVersion.VERSION_1_8
         targetCompatibility = JavaVersion.VERSION_1_8
     }
+    kotlinOptions {
+        jvmTarget = "1.8"
+    }
     buildFeatures {
         viewBinding = true
+    }
+    composeOptions {
+        kotlinCompilerExtensionVersion = "1.5.1"
+    }
+
+    task("testClasses")
+}
+
+protobuf {
+    protoc {
+        val protocPlatform = if (project.hasProperty("protoc_platform")) {
+            project.property("protoc_platform") as String
+        } else {
+            ""
+        }
+        artifact = "com.google.protobuf:protoc:3.9.2${if (protocPlatform.isNotEmpty()) ":$protocPlatform" else ""}"
+    }
+
+    generateProtoTasks {
+        all().forEach { task ->
+            task.builtins {
+                create("java") {
+                    option("lite")
+                }
+            }
+        }
     }
 }
 
 dependencies {
-
     implementation(libs.appcompat)
     implementation(libs.material)
     implementation(libs.constraintlayout)
@@ -45,5 +75,7 @@ dependencies {
     testImplementation(libs.junit)
     androidTestImplementation(libs.ext.junit)
     androidTestImplementation(libs.espresso.core)
-
+    implementation(libs.datastore)
+    implementation(libs.datastore.rxjava3)
+    implementation(libs.protobuf.javalite)
 }

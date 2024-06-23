@@ -4,11 +4,17 @@ junit = "4.13.2"
 junitVersion = "1.1.5"
 espressoCore = "3.5.1"
 appcompat = "1.6.1"
-material = "1.10.0"
+material = "1.12.0"
 constraintlayout = "2.1.4"
-activity = "1.8.0"
+activity = "1.9.0"
+datastore = "1.1.1"
+protobuf = "4.26.1"
+kotlin = "1.9.0"
 
 [libraries]
+datastore = { module = "androidx.datastore:datastore", version.ref = "datastore" }
+datastore-rxjava3 = { group = "androidx.datastore", name = "datastore-rxjava3", version.ref = "datastore" }
+protobuf-javalite = { module = "com.google.protobuf:protobuf-javalite", version.ref = "protobuf" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 ext-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }
 espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espressoCore" }
@@ -19,4 +25,6 @@ activity = { group = "androidx.activity", name = "activity", version.ref = "acti
 
 [plugins]
 androidApplication = { id = "com.android.application", version.ref = "agp" }
+jetbrainsKotlinAndroid = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
+
 

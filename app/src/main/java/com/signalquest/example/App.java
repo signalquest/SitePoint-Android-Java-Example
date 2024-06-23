@@ -11,7 +11,7 @@ import android.util.Log;
  * and supplies an error broadcaster.
  */
 public class App extends Application {
-    final static Ntrip ntrip = new Ntrip();
+    static Ntrip ntrip;
     final static  BleManager bleManager = new BleManager();
     public final static String ERROR_ACTION = "com.signalquest.example.ERROR_ACTION";
 
@@ -36,6 +36,7 @@ public class App extends Application {
     public void onCreate() {
         super.onCreate();
         App.context = getApplicationContext();
+        ntrip = new Ntrip();
     }
 
     public static Context getAppContext() {

@@ -2,8 +2,6 @@
 
 # Permissions
 
-## Overview
-
 This section covers adding permissions for Bluetooth and Location services to your Android application.
 
 ## Adding Permissions to AndroidManifest.xml
@@ -25,6 +23,6 @@ This file includes both Javadoc and inline comments to provide helpful informati
 
 <hr>
 
-## Read Next
+## Next Steps
 
 - [Bluetooth Setup](B3_Bluetooth_Setup.md) - Set up BLEManager to handle Bluetooth Low-Energy (BLE) scanning and connections.

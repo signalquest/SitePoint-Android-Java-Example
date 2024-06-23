@@ -2,8 +2,6 @@
 
 # Bluetooth Setup
 
-## Overview
-
 The `BleManager` handles the scanning and connections for the SitePoint devices.
 
 > **_Note:_** SitePoint devices are Bluetooth peripherals. In Bluetooth terms, this means they are connected from a Bluetooth central device — a mobile device running an app, in this case.
@@ -36,6 +34,6 @@ Data is written to the SitePoint by writing to a characteristic. An example of t
 
 <hr>
 
-## Read Next
+## Next Steps
 
 - [Message Handling](B4_Message_Handling.md) - Send and receive data from the SitePoint peripheral.

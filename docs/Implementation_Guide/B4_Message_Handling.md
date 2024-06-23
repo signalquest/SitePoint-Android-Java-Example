@@ -2,8 +2,6 @@
 
 # Message Handling
 
-## Overview
-
 This section covers receiving messages from the SitePoint peripheral.
 
 ## About Structured Messages
@@ -24,6 +22,6 @@ The `LocationParcelable` and `StatusParcelable` classes are also provided. These
 
 <hr>
 
-## Read Next
+## Next Steps
 
 - [NTRIP](B5_NTRIP.md) - Receive NTRIP data from the internet and send it to the SitePoint peripheral for aiding.
